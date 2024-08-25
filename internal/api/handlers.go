@@ -1,17 +1,15 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
+	"github.com/labstack/echo/v5"
 	"github.com/madalinpopa/loto/internal/generator"
 )
 
 // APIInfo type holds details about API.
-type APIInfo struct {
+type Info struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
 	Description string `json:"description"`
@@ -25,37 +23,31 @@ type Route struct {
 }
 
 // RoodHandler handles requests to /api/v1/ route
-func RootHandler(routes []Route) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/" {
-			http.NotFound(w, r)
-			return
-		}
-		json.NewEncoder(w).Encode(routes)
+func RootHandler(routes []Route) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		return c.JSON(http.StatusOK, routes)
 	}
 }
 
 // AboutHandler handles requests to /api/v1/about/
-func AboutHandler(w http.ResponseWriter, r *http.Request) {
-	info := APIInfo{
+func AboutHandler(c echo.Context) error {
+	info := Info{
 		Name:        "Number Generator API",
 		Version:     "0.1.0",
 		Description: "This API generates 6 random numbers and stores the history in Google Sheets",
 	}
-	json.NewEncoder(w).Encode(info)
+	return c.JSON(http.StatusOK, info)
 }
 
-func GenerateNumbersHandler(w http.ResponseWriter, r *http.Request) {
-	ns := r.PathValue("length")
+func GenerateNumbersHandler(c echo.Context) error {
+	ns := c.PathParam("len")
 
 	// Attempt to convert string to number
 	n, err := strconv.Atoi(ns)
 	if err != nil {
-		fmt.Fprint(w, "Not a valid number provide")
-		log.Printf("Error: Not a valid number. Provided length: %s", ns)
-		return
+		return c.JSON(http.StatusBadRequest, "Not a valid number provided")
 	}
 
 	numbers := generator.GenerateNumbers(n)
-	json.NewEncoder(w).Encode(numbers)
+	return c.JSON(http.StatusOK, numbers)
 }
