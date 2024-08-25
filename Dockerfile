@@ -5,7 +5,7 @@ FROM golang:1.23-alpine AS builder
 WORKDIR /app
 
 # Copy go mod and sum files
-COPY go.mod /app/go.mod
+COPY go.mod go.sum ./
 
 # Download all dependencies
 RUN go mod download
@@ -29,7 +29,7 @@ COPY --from=builder /app/main .
 # COPY --from=builder /app/configs/config.yaml ./configs/
 
 # Expose the port the app runs on
-EXPOSE 8000
+EXPOSE 8090
 
 # Command to run the executable
-CMD ["./main"]
+CMD ["./main", "serve"]
