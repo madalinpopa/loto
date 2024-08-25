@@ -5,7 +5,9 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v5"
+	"github.com/madalinpopa/loto/internal/database"
 	"github.com/madalinpopa/loto/internal/generator"
+	"github.com/pocketbase/pocketbase"
 )
 
 // APIInfo type holds details about API.
@@ -39,15 +41,20 @@ func AboutHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, info)
 }
 
-func GenerateNumbersHandler(c echo.Context) error {
-	ns := c.PathParam("len")
+func GenerateNumbersHandler(app *pocketbase.PocketBase) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		ns := c.PathParam("len")
 
-	// Attempt to convert string to number
-	n, err := strconv.Atoi(ns)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, "Not a valid number provided")
+		// Attempt to convert string to number
+		n, err := strconv.Atoi(ns)
+		if err != nil {
+			return c.JSON(http.StatusBadRequest, "Not a valid number provided")
+		}
+
+		numbers := generator.GenerateNumbers(n)
+		if err = database.SaveGeneratedNumbers(app, numbers); err != nil {
+			app.Logger().Error("Failed to save generated numbers", err.Error(), numbers)
+		}
+		return c.JSON(http.StatusOK, numbers)
 	}
-
-	numbers := generator.GenerateNumbers(n)
-	return c.JSON(http.StatusOK, numbers)
 }
