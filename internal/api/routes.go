@@ -1,34 +1,48 @@
 package api
 
-import "net/http"
+import (
+	"log"
+	"os"
+	"strings"
 
-// Chain applies a series of middlewares to a http.Handler
-func Chain(h http.Handler, middlewares ...func(http.Handler) http.Handler) http.Handler {
-	for _, m := range middlewares {
-		h = m(h)
-	}
-	return h
-}
+	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/plugins/migratecmd"
+)
 
 // SetupRoutes configures the routes for our API
-func SetupRoutes() http.Handler {
+func SetupRoutes() {
+
+	// Create a new pocketbase instance
+	app := pocketbase.New()
 
 	routes := []Route{
 		{Path: "/", Method: "GET", Description: "List all available routes"},
 		{Path: "/v1/about/", Method: "GET", Description: "Get information about the API"},
-		{Path: "/v1/new/{length}/", Method: "GET", Description: "Returns a list with numbers of length"},
+		{Path: "/v1/new/:len", Method: "GET", Description: "Returns a list with numbers of length"},
 	}
 
-	mux := http.NewServeMux()
+	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+		e.Router.GET("/", RootHandler(routes))
+		e.Router.GET("/v1/about/", AboutHandler)
+		e.Router.GET("/v1/new/:len/", GenerateNumbersHandler)
 
-	mux.Handle("GET /", RootHandler(routes))
-	mux.HandleFunc("GET /v1/about/", AboutHandler)
-	mux.HandleFunc("GET /v1/new/{length}/", GenerateNumbersHandler)
+		e.Router.Use(DisablePocketAdminAPI())
 
-	// Apply multiple middlewares
-	return Chain(mux,
-		LoggerMiddleWare,
-		JSONContentTypeMiddleware,
-	)
+		return nil
+	})
+
+	// loosely check if it was executed using "go run"
+	isGoRun := strings.HasPrefix(os.Args[0], os.TempDir())
+
+	migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{
+		// enable auto creation of migration files when making collection changes in the Admin UI
+		// (the isGoRun check is to enable it only during development)
+		Automigrate: isGoRun,
+	})
+
+	if err := app.Start(); err != nil {
+		log.Fatal(err)
+	}
 
 }
