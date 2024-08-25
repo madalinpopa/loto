@@ -12,6 +12,8 @@ fi
 if docker ps -a | grep -q pocketbase; then
   echo "Container exists"
 else
+  echo "Building image"
+  docker build -t coderustle/loto:latest .
   echo "Creating container"
-  docker run -d -p 8090:8090 -v pocketbase:/app/pb_data --name loto coderustle/loto:latest
+  docker run -d --rm -p 8090:8090 -v pocketbase:/app/pb_data --name loto coderustle/loto:latest
 fi
