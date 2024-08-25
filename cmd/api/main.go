@@ -1,6 +1,10 @@
 package main
 
-import "github.com/madalinpopa/loto/internal/api"
+import (
+	_ "github.com/madalinpopa/loto/migrations"
+
+	"github.com/madalinpopa/loto/internal/api"
+)
 
 func main() {
 
