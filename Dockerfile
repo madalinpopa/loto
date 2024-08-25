@@ -32,4 +32,4 @@ COPY --from=builder /app/main .
 EXPOSE 8090
 
 # Command to run the executable
-CMD ["./main", "serve"]
+CMD ["./main", "serve", "--http=0.0.0.0:8090"]
