@@ -25,9 +25,7 @@ func SetupRoutes() {
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		e.Router.GET("/", RootHandler(routes))
 		e.Router.GET("/v1/about/", AboutHandler)
-		e.Router.GET("/v1/new/:len/", GenerateNumbersHandler)
-
-		e.Router.Use(DisablePocketAdminAPI())
+		e.Router.GET("/v1/new/:len/", GenerateNumbersHandler(app))
 
 		return nil
 	})
